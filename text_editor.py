@@ -3,6 +3,12 @@ import tkinter.font as TkFont
 from tkinter import filedialog
 from tkinter import messagebox
 
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments import lex
+from pygments.formatters import HtmlFormatter
+from pygments import lexers
+
 
 class Menubar:
 
@@ -56,7 +62,7 @@ class Statusbar:
         self.status = tk.StringVar()
         self.status.set('Text Editor')
 
-        label = tk.Label(parent.textarea, textvariable=self.status, fg="black",
+        label = tk.Label(parent.text, textvariable=self.status, fg="black",
                          bg="lightgrey", anchor='sw', font=font_specs)
         label.pack(side=tk.BOTTOM, fill=tk.BOTH)
 
@@ -127,29 +133,87 @@ class PyText(tk.Frame):
 
         self.master = master
         self.filename = None
+        print('meow')
 
         # Calculate font and tabs
         font = TkFont.Font(font=("Times 14"))
         tab_width = font.measure(' ' * 8)
-        self.textarea = CustomText(self, font = font, tabs=tab_width)
-        self.scroll = tk.Scrollbar(master, orient="vertical", command=self.textarea.yview)
-        self.textarea.configure(yscrollcommand=self.scroll.set)
-        self.textarea.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+
+
+        self.text = CustomText(self, font = font, tabs=tab_width,padx = 5,pady = 5)
+        self.scroll = tk.Scrollbar(master, orient="vertical", command=self.text.yview)
+        self.text.configure(yscrollcommand=self.scroll.set)
+        self.text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+
 
         self.linenumbers = TextLineNumbers(self, width=30)
-        self.linenumbers.attach(self.textarea)
+        self.linenumbers.attach(self.text)
         self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
-
         self.linenumbers.pack(side="left", fill="y")
-        self.textarea.pack(side="right", fill="both", expand=True)
 
-        self.textarea.bind("<<Change>>", self._on_change)
-        self.textarea.bind("<Configure>", self._on_change)
+        # def deafultHighlight():
+        #     self.content = self.text.get("1.0", tk.END)
+        #     self.lines = self.content.split("\n")
+        #
+        #     if (self.previousContent != self.content):
+        #         print('hello')
+        #
+        #         self.text.mark_set("range_start", self.row + ".0")
+        #         data = self.text.get(self.row + ".0", self.row + "." + str(len(self.lines[int(self.row) - 1])))
+        #
+        #         for token, content in lex(data, PythonLexer()):
+        #             self.text.mark_set("range_end", "range_start + %dc" % len(content))
+        #             self.text.tag_add(str(token), "range_start", "range_end")
+        #             self.text.mark_set("range_start", "range_end")
+        #
+        #             print(token,content)
+
+        def syntax_highlighter(event=None):
+            self.text.mark_set("range_start", "1.0")
+            data = self.text.get("1.0", "end-1c")
+            for token, content in lex(data, PythonLexer()):
+                self.text.mark_set("range_end", "range_start + %dc" % len(content))
+                self.text.tag_add(str(token), "range_start", "range_end")
+                self.text.mark_set("range_start", "range_end")
+                self.text.tag_configure("Token.Keyword", foreground="#CC7A00")
+                self.text.tag_configure("Token.Keyword.Constant", foreground="#CC7A00")
+                self.text.tag_configure("Token.Keyword.Declaration", foreground="#CC7A00")
+                self.text.tag_configure("Token.Keyword.Namespace", foreground="#CC7A00")
+                self.text.tag_configure("Token.Keyword.Pseudo", foreground="#CC7A00")
+                self.text.tag_configure("Token.Keyword.Reserved", foreground="#CC7A00")
+                self.text.tag_configure("Token.Keyword.Type", foreground="#CC7A00")
+                self.text.tag_configure("Token.Name.Class", foreground="#003D99")
+                self.text.tag_configure("Token.Name.Exception", foreground="#003D99")
+                self.text.tag_configure("Token.Name.Function", foreground="#003D99")
+                self.text.tag_configure("Token.Operator.Word", foreground="#CC7A00")
+                self.text.tag_configure("Token.Comment", foreground="#B80000")
+                self.text.tag_configure("Token.Literal.String", foreground="#248F24")
+
+
+
+
+
+
+
+        self.text.pack(side="right", fill="both", expand=True)
+
+        self.text.bind("<KeyRelease>", syntax_highlighter)
+        self.text.bind("<<Change>>", self._on_change)
+        self.text.bind("<Configure>", self._on_change)
 
         self.menubar = Menubar(self)
         self.statusbar = Statusbar(self)
+
+        # CMD
+
+        # self.cmd = tk.Text(self, font=font, tabs=tab_width, padx=5, pady=5)
+        # self.cmdscroll = tk.Scrollbar(master, orient="vertical", command=self.cmd.yview)
+        # self.cmd.configure(yscrollcommand=self.cmdscroll.set)
+        # self.cmd.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=False)
+        # self.scroll.pack(side=tk.BOTTOM, fill=tk.BOTH)
 
         self.bind_shortcuts()
 
@@ -160,7 +224,7 @@ class PyText(tk.Frame):
             self.master.title("Untitled - PyText")
 
     def new_file(self, *args):
-        self.textarea.delete(1.0, tk.END)
+        self.text.delete(1.0, tk.END)
         self.filename = None
         self.set_window_title()
 
@@ -175,15 +239,15 @@ class PyText(tk.Frame):
                        ("HTML Documents", "*.html"),
                        ("CSS Documents", "*.css")])
         if self.filename:
-            self.textarea.delete(1.0, tk.END)
+            self.text.delete(1.0, tk.END)
             with open(self.filename, "r") as f:
-                self.textarea.insert(1.0, f.read())
+                self.text.insert(1.0, f.read())
             self.set_window_title(self.filename)
 
     def save(self, *args):
         if self.filename:
             try:
-                textarea_content = self.textarea.get(1.0, tk.END)
+                textarea_content = self.text.get(1.0, tk.END)
                 with open(self.filename, "w") as f:
                     f.write(textarea_content)
                 self.statusbar.update_status(True)
@@ -204,7 +268,7 @@ class PyText(tk.Frame):
                            ("JavaScript Files", "*.js"),
                            ("HTML Documents", "*.html"),
                            ("CSS Documents", "*.css")])
-            textarea_content = self.textarea.get(1.0, tk.END)
+            textarea_content = self.text.get(1.0, tk.END)
             with open(new_file, "w") as f:
                 f.write(textarea_content)
             self.filename = new_file
@@ -214,11 +278,11 @@ class PyText(tk.Frame):
             print(e)
 
     def bind_shortcuts(self):
-        self.textarea.bind('<Control-n>', self.new_file)
-        self.textarea.bind('<Control-o>', self.open_file)
-        self.textarea.bind('<Control-s>', self.save)
-        self.textarea.bind('<Control-S>', self.save_as)
-        self.textarea.bind('<Key>', self.statusbar.update_status)
+        self.text.bind('<Control-n>', self.new_file)
+        self.text.bind('<Control-o>', self.open_file)
+        self.text.bind('<Control-s>', self.save)
+        self.text.bind('<Control-S>', self.save_as)
+        self.text.bind('<Key>', self.statusbar.update_status)
 
     def _on_change(self, event):
         self.linenumbers.redraw()

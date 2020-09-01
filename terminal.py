@@ -31,13 +31,13 @@ class Console(tk.Frame):
     def __init__(self, parent, _locals, exit_callback):
         super().__init__(parent)
 
-        self.text = ConsoleText(self, wrap=tk.WORD)
-        self.text.pack(fill=tk.BOTH, expand=True)
+        self.cmd = ConsoleText(self, wrap=tk.WORD)
+        self.cmd.pack(fill=tk.BOTH, expand=True)
 
         self.shell = code.InteractiveConsole(_locals)
 
         # make the enter key call the self.enter function
-        self.text.bind("<Return>", self.enter)
+        self.cmd.bind("<Return>", self.enter)
         self.prompt_flag = True
         self.command_running = False
         self.exit_callback = exit_callback
@@ -59,7 +59,7 @@ class Console(tk.Frame):
 
         # write the >>>
         if self.prompt_flag and not sys.stdin.reading:
-            self.text.prompt()
+            self.cmd.prompt()
             self.prompt_flag = False
 
         # get data from buffer
@@ -71,7 +71,7 @@ class Console(tk.Frame):
         # write to console
         str_data = str_io.getvalue()
         if str_data:
-            self.text.write(str_data, tag_name, "prompt_end", **kwargs)
+            self.cmd.write(str_data, tag_name, "prompt_end", **kwargs)
 
         # loop
         self.after(50, lambda: self.readFromPipe(pipe, tag_name, **kwargs))
@@ -81,7 +81,7 @@ class Console(tk.Frame):
 
         if sys.stdin.reading:
             # if stdin requested, then put data in stdin instead of running a new command
-            line = self.text.consume_last_line()
+            line = self.cmd.consume_last_line()
             line = line[1:] + '\n'
             sys.stdin.buffer.put(line)
             return
@@ -91,14 +91,14 @@ class Console(tk.Frame):
             return
 
         # get the command text
-        command = self.text.read_last_line()
+        command = self.cmd.read_last_line()
         try:
             # compile it
             compiled = code.compile_command(command)
             is_complete_command = compiled is not None
         except (SyntaxError, OverflowError, ValueError):
             # if there is an error compiling the command, print it to the console
-            self.text.consume_last_line()
+            self.cmd.consume_last_line()
             self.prompt()
             traceback.print_exc(0)
             return
@@ -106,7 +106,7 @@ class Console(tk.Frame):
         # if it is a complete command
         if is_complete_command:
             # consume the line and run the command
-            self.text.consume_last_line()
+            self.cmd.consume_last_line()
             self.prompt()
 
             self.command_running = True

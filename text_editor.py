@@ -2,13 +2,17 @@ import tkinter as tk
 import tkinter.font as TkFont
 from tkinter import filedialog
 from tkinter import messagebox
-
 from pygments import highlight
 from pygments.lexers import PythonLexer
 from pygments import lex
 from pygments.formatters import HtmlFormatter
 from pygments import lexers
-
+from terminal import Pipe
+from terminal import ConsoleText
+from tkinter.scrolledtext import ScrolledText
+import io, hashlib, queue, sys, time, threading, traceback
+from terminal import Console
+import code
 
 class Menubar:
 
@@ -135,7 +139,7 @@ class Windows_CMD(tk.Text):
 
 class PyText(tk.Frame):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parent, _locals, exit_callback, *args, **kwargs,):
         tk.Frame.__init__(self, *args, **kwargs)
         master.title("Untitled - PyText")
         master.geometry("1200x700")
@@ -211,15 +215,104 @@ class PyText(tk.Frame):
         self.statusbar = Statusbar(self)
 
 
-        # CMD
+        # START OF PYTHON TERMINAL
 
-        self.cmd = Windows_CMD(self, font=font, tabs=tab_width, padx=5, pady=5,height=5,bg= 'black',fg='white')
+        self.cmd = ConsoleText(self, font=font, tabs=tab_width, padx=5, pady=5,height=5,bg= 'white',fg='black')
         # self.cmdscroll = tk.Scrollbar(master, orient="vertical", command=self.cmd.yview)
         # self.cmd.configure(yscrollcommand=self.cmdscroll.set)
         self.cmd.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
         # self.scroll.pack(side=tk.BOTTOM, fill=tk.BOTH)
 
+        self.shell = code.InteractiveConsole(_locals)
+
+        # make the enter key call the self.enter function
+        self.cmd.bind("<Return>", self.enter)
+        self.prompt_flag = True
+        self.command_running = False
+        self.exit_callback = exit_callback
+
+        # replace all input and output
+        sys.stdout = Pipe()
+        sys.stderr = Pipe()
+        sys.stdin = Pipe()
+
+        self.readFromPipe(sys.stdout, "stdout")
+        self.readFromPipe(sys.stderr, "stderr", foreground='red')
+
         self.bind_shortcuts()
+
+    def prompt(self):
+        """Add a '>>> ' to the console"""
+        self.prompt_flag = True
+
+    def readFromPipe(self, pipe: Pipe, tag_name, **kwargs):
+        """Method for writing data from the replaced stdin and stdout to the console widget"""
+
+        # write the >>>
+        if self.prompt_flag and not sys.stdin.reading:
+            self.cmd.prompt()
+            self.prompt_flag = False
+
+        # get data from buffer
+        str_io = io.StringIO()
+        while not pipe.buffer.empty():
+            c = pipe.buffer.get()
+            str_io.write(c)
+
+        # write to console
+        str_data = str_io.getvalue()
+        if str_data:
+            self.cmd.write(str_data, tag_name, "prompt_end", **kwargs)
+
+        # loop
+        self.after(50, lambda: self.readFromPipe(pipe, tag_name, **kwargs))
+
+    def enter(self, e):
+        """The <Return> key press handler"""
+
+        if sys.stdin.reading:
+            # if stdin requested, then put data in stdin instead of running a new command
+            line = self.cmd.consume_last_line()
+            line = line[1:] + '\n'
+            sys.stdin.buffer.put(line)
+            return
+
+        # don't run multiple commands simultaneously
+        if self.command_running:
+            return
+
+        # get the command text
+        command = self.cmd.read_last_line()
+        try:
+            # compile it
+            compiled = code.compile_command(command)
+            is_complete_command = compiled is not None
+        except (SyntaxError, OverflowError, ValueError):
+            # if there is an error compiling the command, print it to the console
+            self.cmd.consume_last_line()
+            self.prompt()
+            traceback.print_exc(0)
+            return
+
+        # if it is a complete command
+        if is_complete_command:
+            # consume the line and run the command
+            self.cmd.consume_last_line()
+            self.prompt()
+
+            self.command_running = True
+
+            def run_command():
+                try:
+                    self.shell.runcode(compiled)
+                except SystemExit:
+                    self.after(0, self.exit_callback)
+
+                self.command_running = False
+
+            threading.Thread(target=run_command).start()
+
+    #END OF PYTHON TERMINAL
 
     def set_window_title(self, name=None):
         if name:
@@ -297,5 +390,5 @@ class PyText(tk.Frame):
 
 if __name__ == "__main__":
     master = tk.Tk()
-    pt = PyText(master).pack(side="top", fill="both", expand=True)
+    pt = PyText(master,locals(), master.destroy).pack(side="top", fill="both", expand=True)
     master.mainloop()

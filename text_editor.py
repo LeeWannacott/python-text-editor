@@ -66,6 +66,7 @@ class Statusbar:
                          bg="lightgrey", anchor='sw', font=font_specs)
         label.pack(side=tk.BOTTOM, fill=tk.BOTH)
 
+
     def update_status(self, *args):
         if isinstance(args[0], bool):
             self.status.set("Your File Has Been Saved!")
@@ -124,6 +125,14 @@ class CustomText(tk.Text):
         # return what the actual widget returned
         return result
 
+class Windows_CMD(tk.Text):
+    def __init__(self, *args, **kwargs):
+        tk.Text.__init__(self, *args, **kwargs)
+        # import subprocess, os
+        # subprocess.Popen('cmd.exe')
+        # os.system("cmd.exe")
+
+
 class PyText(tk.Frame):
 
     def __init__(self, *args, **kwargs):
@@ -141,18 +150,19 @@ class PyText(tk.Frame):
 
 
 
-        self.text = CustomText(self, font = font, tabs=tab_width,padx = 5,pady = 5)
+        # Text area
+        self.text = CustomText(self, font = font, tabs=tab_width,padx = 5,pady = 5,height=5)
+
+        self.linenumbers = TextLineNumbers(self, width=25)
+        self.linenumbers.attach(self.text)
+        self.linenumbers.pack(side="left", fill="y")
+
         self.scroll = tk.Scrollbar(master, orient="vertical", command=self.text.yview)
         self.text.configure(yscrollcommand=self.scroll.set)
-        self.text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # self.text.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
+        self.text.pack(side="top", fill="both", expand=True)
         self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-
-
-        self.linenumbers = TextLineNumbers(self, width=30)
-        self.linenumbers.attach(self.text)
-        self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.linenumbers.pack(side="left", fill="y")
 
         # def deafultHighlight():
         #     self.content = self.text.get("1.0", tk.END)
@@ -193,13 +203,6 @@ class PyText(tk.Frame):
                 self.text.tag_configure("Token.Literal.String", foreground="#248F24")
 
 
-
-
-
-
-
-        self.text.pack(side="right", fill="both", expand=True)
-
         self.text.bind("<KeyRelease>", syntax_highlighter)
         self.text.bind("<<Change>>", self._on_change)
         self.text.bind("<Configure>", self._on_change)
@@ -207,12 +210,13 @@ class PyText(tk.Frame):
         self.menubar = Menubar(self)
         self.statusbar = Statusbar(self)
 
+
         # CMD
 
-        # self.cmd = tk.Text(self, font=font, tabs=tab_width, padx=5, pady=5)
+        self.cmd = Windows_CMD(self, font=font, tabs=tab_width, padx=5, pady=5,height=5,bg= 'black',fg='white')
         # self.cmdscroll = tk.Scrollbar(master, orient="vertical", command=self.cmd.yview)
         # self.cmd.configure(yscrollcommand=self.cmdscroll.set)
-        # self.cmd.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=False)
+        self.cmd.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
         # self.scroll.pack(side=tk.BOTTOM, fill=tk.BOTH)
 
         self.bind_shortcuts()

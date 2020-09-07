@@ -7,11 +7,11 @@ from pygments.lexers import PythonLexer
 from pygments import lex
 from pygments.formatters import HtmlFormatter
 from pygments import lexers
-from terminal import Pipe
-from terminal import ConsoleText
+from python_terminal import Pipe
+from python_terminal import ConsoleText
 from tkinter.scrolledtext import ScrolledText
 import io, hashlib, queue, sys, time, threading, traceback
-from terminal import Console
+from python_terminal import Console
 import code
 
 class Menubar:
@@ -75,7 +75,14 @@ class Statusbar:
         if isinstance(args[0], bool):
             self.status.set("Your File Has Been Saved!")
         else:
-            self.status.set("Edit Mode")
+           pass
+
+    def update_status2(self, *args):
+        if isinstance(args[0], bool):
+            if args[0] == True:
+                self.status.set("Edit Mode")
+            elif args[0] == False:
+                self.status.set("Normal Mode")
 
 class TextLineNumbers(tk.Canvas):
     def __init__(self, *args, **kwargs):
@@ -129,12 +136,6 @@ class CustomText(tk.Text):
         # return what the actual widget returned
         return result
 
-class Windows_CMD(tk.Text):
-    def __init__(self, *args, **kwargs):
-        tk.Text.__init__(self, *args, **kwargs)
-        # import subprocess, os
-        # subprocess.Popen('cmd.exe')
-        # os.system("cmd.exe")
 
 
 class PyText(tk.Frame):
@@ -149,6 +150,7 @@ class PyText(tk.Frame):
         print('meow')
 
         # Calculate font and tabs
+        global font
         font = TkFont.Font(font=("Times 14"))
         tab_width = font.measure(' ' * 8)
 
@@ -192,24 +194,29 @@ class PyText(tk.Frame):
                 self.text.mark_set("range_end", "range_start + %dc" % len(content))
                 self.text.tag_add(str(token), "range_start", "range_end")
                 self.text.mark_set("range_start", "range_end")
-                self.text.tag_configure("Token.Keyword", foreground="#CC7A00")
-                self.text.tag_configure("Token.Keyword.Constant", foreground="#CC7A00")
-                self.text.tag_configure("Token.Keyword.Declaration", foreground="#CC7A00")
-                self.text.tag_configure("Token.Keyword.Namespace", foreground="#CC7A00")
-                self.text.tag_configure("Token.Keyword.Pseudo", foreground="#CC7A00")
-                self.text.tag_configure("Token.Keyword.Reserved", foreground="#CC7A00")
-                self.text.tag_configure("Token.Keyword.Type", foreground="#CC7A00")
-                self.text.tag_configure("Token.Name.Class", foreground="#003D99")
+                self.text.tag_configure("Token.Keyword", foreground="#DD7A00")
+                self.text.tag_configure("Token.Name.Builtin", foreground="#248F24")
+                self.text.tag_configure("Token.Keyword.Constant", foreground="#CF7A00")
+                self.text.tag_configure("Token.Literal.String.Double", foreground="#648F24")
+                self.text.tag_configure("Token.Literal.String.Single", foreground="#648F24")
+                self.text.tag_configure("Token.Keyword.Declaration", foreground="#CE7A00")
+                self.text.tag_configure("Token.Keyword.Namespace", foreground="#CE8A80")
+                self.text.tag_configure("Token.Keyword.Pseudo", foreground="#CC7B00")
+                self.text.tag_configure("Token.Keyword.Reserved", foreground="#A87A00")
+                self.text.tag_configure("Token.Keyword.Type", foreground="#CFFA00")
+                self.text.tag_configure("Token.Name.Class", foreground="#ABF")
                 self.text.tag_configure("Token.Name.Exception", foreground="#003D99")
                 self.text.tag_configure("Token.Name.Function", foreground="#003D99")
                 self.text.tag_configure("Token.Operator.Word", foreground="#CC7A00")
                 self.text.tag_configure("Token.Comment", foreground="#B80000")
                 self.text.tag_configure("Token.Literal.String", foreground="#248F24")
+                print(token)
 
-
-        self.text.bind("<KeyRelease>", syntax_highlighter)
         self.text.bind("<<Change>>", self._on_change)
         self.text.bind("<Configure>", self._on_change)
+        self.text.bind("<KeyRelease>", syntax_highlighter)
+
+
 
         self.menubar = Menubar(self)
         self.statusbar = Statusbar(self)
@@ -374,12 +381,97 @@ class PyText(tk.Frame):
         except Exception as e:
             print(e)
 
+    # Key mappings for Normal mode
+
+
+    def go_to_start_of_word(self,*args):
+        self.text.mark_set('insert', 'insert -1c wordstart')
+        return "break"
+
+    def go_to_end_of_word(self, *args):
+        self.text.mark_set('insert', 'insert wordend')
+        return "break"
+
+    def go_to_start_of_line(self, *args):
+        self.text.mark_set('insert', 'insert linestart')
+        return "break"
+
+    def go_to_end_of_line(self, *args):
+        self.text.mark_set('insert', 'insert lineend')
+        return "break"
+
+    def go_down_one_line(self, *args):
+        self.text.mark_set('insert', 'insert + 1 lines')
+        return "break"
+
+    def go_up_one_line(self, *args):
+        self.text.mark_set('insert', 'insert - 1 lines')
+        return "break"
+
+
+    def get_last(self, *args):
+        test = self.text.get('insert -1c')
+        if test == ':':
+            self.text.mark_set('insert', 'insert + 1 lines')
+            tab = str(font.measure(' ' * 8))
+            tab_width = "+" + tab + 'c'
+            self.text.mark_set('insert', tab_width)
+
+        print(test)
+
+
+        print(test)
+
+        return "break"
+
+
+
+    global counter
+    counter = 0
+    def normal_mode(self,*args):
+        global counter
+        counter +=1
+        print(counter)
+        self.text.bind('<s>', self.go_to_start_of_word)
+        self.text.bind('<f>', self.go_to_end_of_word)
+        self.text.bind('<w>', self.go_to_start_of_line)
+        self.text.bind('<r>', self.go_to_end_of_line)
+        self.text.bind('<d>', self.go_down_one_line)
+        self.text.bind('<e>', self.go_up_one_line)
+        self.text.bind('<q>', self.get_last)
+        # self.text.bind('<t>', self.delete_line)
+        self.statusbar.update_status2(True)
+
+
+        if counter > 1:
+            self.statusbar.update_status2(False)
+            self.text.unbind_all(self)
+            counter = 0
+            print('2')
+
+    def enter_key(self,*args):
+
+        test = self.text.get('insert -1c')
+        if test == ':':
+            self.text.mark_set('insert', 'insert + 1 lines')
+            tab_width = font.measure(' ' * 8)
+            self.text.mark_set('insert', tab_width)
+
+
+        print(test)
+
+
+
     def bind_shortcuts(self):
         self.text.bind('<Control-n>', self.new_file)
         self.text.bind('<Control-o>', self.open_file)
         self.text.bind('<Control-s>', self.save)
         self.text.bind('<Control-S>', self.save_as)
         self.text.bind('<Key>', self.statusbar.update_status)
+        self.text.bind('<Enter>', self.enter_key)
+        self.text.unbind("<Caps_Lock>")
+        self.text.bind('<Caps_Lock>', self.normal_mode)
+
 
     def _on_change(self, event):
         self.linenumbers.redraw()

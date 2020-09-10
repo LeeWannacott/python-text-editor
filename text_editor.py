@@ -14,6 +14,10 @@ import io, hashlib, queue, sys, time, threading, traceback
 from python_terminal import Console
 import code
 import pyautogui
+import jedi
+import json
+
+
 
 class Menubar:
 
@@ -184,8 +188,10 @@ class PyText(tk.Frame):
 
         global syntax_highlighter
         def syntax_highlighter(event=None):
+
             self.text.mark_set("range_start", "1.0")
             data = self.text.get("1.0", "end-1c")
+
             for token, content in lex(data, PythonLexer()):
                 self.text.mark_set("range_end", "range_start + %dc" % len(content))
                 self.text.tag_add(str(token), "range_start", "range_end")
@@ -204,18 +210,19 @@ class PyText(tk.Frame):
                 self.text.tag_configure("Token.Name.Exception", foreground="#003D99")
                 self.text.tag_configure("Token.Name.Function", foreground="#003D99")
                 self.text.tag_configure("Token.Operator.Word", foreground="#CC7A00")
-                self.text.tag_configure("Token.Comment", foreground="#B80000")
+                self.text.tag_configure("Token.Comment.Single", foreground="#B80000")
                 self.text.tag_configure("Token.Literal.String", foreground="#248F24")
-                # print(token)
+
+
+                # print(token,content)
 
 
 
 
         self.text.bind("<<Change>>", self._on_change)
         self.text.bind("<Configure>", self._on_change)
-        self.text.bind("<KeyRelease>", syntax_highlighter)
-
-
+        self.text.bind("<KeyRelease>", syntax_highlighter ,add="+")
+        self.text.bind('<KeyRelease>', self.autocomplete, add="+")
 
         self.menubar = Menubar(self)
         self.statusbar = Statusbar(self)
@@ -422,9 +429,6 @@ class PyText(tk.Frame):
         pyautogui.press('shift')
         return "break"
 
-
-
-
     global counter
     counter = 0
     def normal_mode(self,*args):
@@ -440,10 +444,6 @@ class PyText(tk.Frame):
         self.text.bind('<d>', self.go_down_one_line)
         self.text.bind('<e>', self.go_up_one_line)
         self.text.bind('<a>', self.select)
-
-
-
-
         if counter > 1:
             self.statusbar.update_status2(False)
             self.text.unbind('<s>')
@@ -457,9 +457,6 @@ class PyText(tk.Frame):
             counter = 0
             # return 'break'
         # return 'break'
-
-
-
     def bind_shortcuts(self):
         self.text.bind('<Control-n>', self.new_file)
         self.text.bind('<Control-o>', self.open_file)
@@ -469,13 +466,22 @@ class PyText(tk.Frame):
         self.text.bind("<Return>", self.enter_key)
         self.text.bind('<Escape>', self.normal_mode)
         self.text.bind('<Caps_Lock>', self.normal_mode)
-
-
-
-
     def _on_change(self, event):
         self.linenumbers.redraw()
 
+
+    def autocomplete(self,*args):
+        # print('testing')
+        line_column = self.text.index('insert').split('.')
+        # index_split = index.split('.')
+        line, column = int(line_column[0]), int(line_column[1])
+        source = self.text.get('1.0',"end")
+        print(line, column)
+        if self.filename:
+            print('testing')
+            script = jedi.Script(code=source,path=self.filename)
+            completion = script.complete(line=line,column=column)
+            print(script,completion)
 
 
 

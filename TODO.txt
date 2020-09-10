@@ -1,0 +1,14 @@
+To complete:
+    Optimize syntax highlighter(do by line).
+    Add more Vim commands.
+    Add linter(Pyflake).
+    Add intellisense(Jedi).
+    Add having multiple tabs for files.
+    Add file manager in sidebar.
+    Add lines to show indentation levels.
+
+Completed:
+    Integrate Python terminal into window.
+    Syntax Highlighter(Pygments).
+    Add button to run .py files.
+    Map output from running to python terminal.

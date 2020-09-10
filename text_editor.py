@@ -13,6 +13,7 @@ from tkinter.scrolledtext import ScrolledText
 import io, hashlib, queue, sys, time, threading, traceback
 from python_terminal import Console
 import code
+import pyautogui
 
 class Menubar:
 
@@ -39,12 +40,23 @@ class Menubar:
         file_dropdown.add_command(label="Exit",
                                   command=parent.master.destroy)
 
+
+        # Button for running the code.
+        run_script = tk.Menu(menubar, font=font_specs, tearoff=0)
+        run_script.add_command(label="Run",
+                                   command=parent.run_current_script)
+
+        # About
         about_dropdown = tk.Menu(menubar, font=font_specs, tearoff=0)
         about_dropdown.add_command(label="About",
                                    command=self.show_about_message)
 
         menubar.add_cascade(label="File", menu=file_dropdown)
         menubar.add_cascade(label="About", menu=about_dropdown)
+        menubar.add_cascade(label="Run", menu=run_script)
+
+
+
 
     def show_about_message(self):
         box_title = "About PyText"
@@ -53,8 +65,11 @@ class Menubar:
 
     def show_release_notes(self):
         box_title = "Release Notes"
-        box_message = "Version 0.1 - Gutenberg"
+        box_message = "Version 0.1"
         messagebox.showinfo(box_title, box_message)
+
+
+
 
 
 class Statusbar:
@@ -137,7 +152,6 @@ class CustomText(tk.Text):
         return result
 
 
-
 class PyText(tk.Frame):
 
     def __init__(self, parent, _locals, exit_callback, *args, **kwargs,):
@@ -146,6 +160,7 @@ class PyText(tk.Frame):
         master.geometry("1200x700")
 
         self.master = master
+
         self.filename = None
         print('meow')
 
@@ -153,8 +168,6 @@ class PyText(tk.Frame):
         global font
         font = TkFont.Font(font=("Times 14"))
         tab_width = font.measure(' ' * 8)
-
-
 
         # Text area
         self.text = CustomText(self, font = font, tabs=tab_width,padx = 5,pady = 5,height=5)
@@ -169,24 +182,7 @@ class PyText(tk.Frame):
         self.text.pack(side="top", fill="both", expand=True)
         self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-
-        # def deafultHighlight():
-        #     self.content = self.text.get("1.0", tk.END)
-        #     self.lines = self.content.split("\n")
-        #
-        #     if (self.previousContent != self.content):
-        #         print('hello')
-        #
-        #         self.text.mark_set("range_start", self.row + ".0")
-        #         data = self.text.get(self.row + ".0", self.row + "." + str(len(self.lines[int(self.row) - 1])))
-        #
-        #         for token, content in lex(data, PythonLexer()):
-        #             self.text.mark_set("range_end", "range_start + %dc" % len(content))
-        #             self.text.tag_add(str(token), "range_start", "range_end")
-        #             self.text.mark_set("range_start", "range_end")
-        #
-        #             print(token,content)
-
+        global syntax_highlighter
         def syntax_highlighter(event=None):
             self.text.mark_set("range_start", "1.0")
             data = self.text.get("1.0", "end-1c")
@@ -210,7 +206,10 @@ class PyText(tk.Frame):
                 self.text.tag_configure("Token.Operator.Word", foreground="#CC7A00")
                 self.text.tag_configure("Token.Comment", foreground="#B80000")
                 self.text.tag_configure("Token.Literal.String", foreground="#248F24")
-                print(token)
+                # print(token)
+
+
+
 
         self.text.bind("<<Change>>", self._on_change)
         self.text.bind("<Configure>", self._on_change)
@@ -225,11 +224,7 @@ class PyText(tk.Frame):
         # START OF PYTHON TERMINAL
 
         self.cmd = ConsoleText(self, font=font, tabs=tab_width, padx=5, pady=5,height=5,bg= 'white',fg='black')
-        # self.cmdscroll = tk.Scrollbar(master, orient="vertical", command=self.cmd.yview)
-        # self.cmd.configure(yscrollcommand=self.cmdscroll.set)
         self.cmd.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
-        # self.scroll.pack(side=tk.BOTTOM, fill=tk.BOTH)
-
         self.shell = code.InteractiveConsole(_locals)
 
         # make the enter key call the self.enter function
@@ -346,6 +341,9 @@ class PyText(tk.Frame):
             self.text.delete(1.0, tk.END)
             with open(self.filename, "r") as f:
                 self.text.insert(1.0, f.read())
+
+            syntax_highlighter()
+            # self.syntax_highlighter()
             self.set_window_title(self.filename)
 
     def save(self, *args):
@@ -381,9 +379,15 @@ class PyText(tk.Frame):
         except Exception as e:
             print(e)
 
+    def run_current_script(self, *args):
+        print('run')
+        if self.filename:
+            exec(open(self.filename).read())
+            print(self.filename)
+
+
+
     # Key mappings for Normal mode
-
-
     def go_to_start_of_word(self,*args):
         self.text.mark_set('insert', 'insert -1c wordstart')
         return "break"
@@ -409,20 +413,15 @@ class PyText(tk.Frame):
         return "break"
 
 
-    def get_last(self, *args):
-        test = self.text.get('insert -1c')
-        if test == ':':
-            self.text.mark_set('insert', 'insert + 1 lines')
-            tab = str(font.measure(' ' * 8))
-            tab_width = "+" + tab + 'c'
-            self.text.mark_set('insert', tab_width)
+    def enter_key(self,*args):
+        last_char = self.text.get('insert -1c')
+        if last_char == ':':
+            pyautogui.press('tab')
 
-        print(test)
-
-
-        print(test)
-
+    def select(self, *args):
+        pyautogui.press('shift')
         return "break"
+
 
 
 
@@ -430,35 +429,34 @@ class PyText(tk.Frame):
     counter = 0
     def normal_mode(self,*args):
         global counter
+
         counter +=1
         print(counter)
+        self.statusbar.update_status2(True)
         self.text.bind('<s>', self.go_to_start_of_word)
         self.text.bind('<f>', self.go_to_end_of_word)
         self.text.bind('<w>', self.go_to_start_of_line)
         self.text.bind('<r>', self.go_to_end_of_line)
         self.text.bind('<d>', self.go_down_one_line)
         self.text.bind('<e>', self.go_up_one_line)
-        self.text.bind('<q>', self.get_last)
-        # self.text.bind('<t>', self.delete_line)
-        self.statusbar.update_status2(True)
+        self.text.bind('<a>', self.select)
+
+
 
 
         if counter > 1:
             self.statusbar.update_status2(False)
-            self.text.unbind_all(self)
+            self.text.unbind('<s>')
+            self.text.unbind('<f>')
+            self.text.unbind('<w>')
+            self.text.unbind('<r>')
+            self.text.unbind('<d>')
+            self.text.unbind('<e>')
+            self.text.unbind('<a>')
+            print(counter)
             counter = 0
-            print('2')
-
-    def enter_key(self,*args):
-
-        test = self.text.get('insert -1c')
-        if test == ':':
-            self.text.mark_set('insert', 'insert + 1 lines')
-            tab_width = font.measure(' ' * 8)
-            self.text.mark_set('insert', tab_width)
-
-
-        print(test)
+            # return 'break'
+        # return 'break'
 
 
 
@@ -468,9 +466,11 @@ class PyText(tk.Frame):
         self.text.bind('<Control-s>', self.save)
         self.text.bind('<Control-S>', self.save_as)
         self.text.bind('<Key>', self.statusbar.update_status)
-        self.text.bind('<Enter>', self.enter_key)
-        self.text.unbind("<Caps_Lock>")
+        self.text.bind("<Return>", self.enter_key)
+        self.text.bind('<Escape>', self.normal_mode)
         self.text.bind('<Caps_Lock>', self.normal_mode)
+
+
 
 
     def _on_change(self, event):

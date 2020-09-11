@@ -16,7 +16,10 @@ import code
 import pyautogui
 import jedi
 import json
-
+import string, io,os
+import idlelib
+import AutoCompleteWindow
+# from AutoComplete import AutoComplete
 
 
 class Menubar:
@@ -166,7 +169,7 @@ class PyText(tk.Frame):
         self.master = master
 
         self.filename = None
-        print('meow')
+
 
         # Calculate font and tabs
         global font
@@ -222,11 +225,17 @@ class PyText(tk.Frame):
         self.text.bind("<<Change>>", self._on_change)
         self.text.bind("<Configure>", self._on_change)
         self.text.bind("<KeyRelease>", syntax_highlighter ,add="+")
-        self.text.bind('<KeyRelease>', self.autocomplete, add="+")
+        self.text.bind('<KeyRelease>', self.jedi_autocomplete, add="+")
+
+        # auto_complete_window = AutoComplete(self.text)
+
+
+
 
         self.menubar = Menubar(self)
         self.statusbar = Statusbar(self)
 
+        # auto = AutoComplete(self.text)
 
         # START OF PYTHON TERMINAL
 
@@ -387,10 +396,11 @@ class PyText(tk.Frame):
             print(e)
 
     def run_current_script(self, *args):
-        print('run')
         if self.filename:
             exec(open(self.filename).read())
             print(self.filename)
+        else:
+            print('Load/save a file before running.')
 
 
 
@@ -435,7 +445,7 @@ class PyText(tk.Frame):
         global counter
 
         counter +=1
-        print(counter)
+
         self.statusbar.update_status2(True)
         self.text.bind('<s>', self.go_to_start_of_word)
         self.text.bind('<f>', self.go_to_end_of_word)
@@ -470,18 +480,24 @@ class PyText(tk.Frame):
         self.linenumbers.redraw()
 
 
-    def autocomplete(self,*args):
+    def jedi_autocomplete(self,*args):
         # print('testing')
         line_column = self.text.index('insert').split('.')
-        # index_split = index.split('.')
         line, column = int(line_column[0]), int(line_column[1])
-        source = self.text.get('1.0',"end")
-        print(line, column)
+        code = self.text.get('1.0',"end")
+        # print(line, column)
         if self.filename:
             print('testing')
-            script = jedi.Script(code=source,path=self.filename)
+            script = jedi.Script(code=code,path=self.filename)
             completion = script.complete(line=line,column=column)
-            print(script,completion)
+            print(completion)
+        else:
+            script = jedi.Script(code=code)
+            completion = script.complete(line=line, column=column)
+            print(completion)
+            # for i,names in enumerate(completion):
+            #     print(completion[i].name)
+
 
 
 

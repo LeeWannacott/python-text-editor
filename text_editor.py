@@ -1,6 +1,6 @@
 import tkinter as tk
 import tkinter.font as TkFont
-from tkinter import filedialog
+from tkinter import filedialog, Toplevel
 from tkinter import messagebox
 from pygments import highlight
 from pygments.lexers import PythonLexer
@@ -18,8 +18,8 @@ import jedi
 import json
 import string, io,os
 import idlelib
-import AutoCompleteWindow
-# from AutoComplete import AutoComplete
+
+
 
 
 class Menubar:
@@ -220,22 +220,15 @@ class PyText(tk.Frame):
                 # print(token,content)
 
 
-
-
         self.text.bind("<<Change>>", self._on_change)
         self.text.bind("<Configure>", self._on_change)
         self.text.bind("<KeyRelease>", syntax_highlighter ,add="+")
-        self.text.bind('<KeyRelease>', self.jedi_autocomplete, add="+")
-
-        # auto_complete_window = AutoComplete(self.text)
-
-
-
+        # self.text.bind('<KeyRelease>', self.jedi_autocomplete, add="+")
 
         self.menubar = Menubar(self)
         self.statusbar = Statusbar(self)
 
-        # auto = AutoComplete(self.text)
+
 
         # START OF PYTHON TERMINAL
 
@@ -476,6 +469,7 @@ class PyText(tk.Frame):
         self.text.bind("<Return>", self.enter_key)
         self.text.bind('<Escape>', self.normal_mode)
         self.text.bind('<Caps_Lock>', self.normal_mode)
+        self.text.bind('<Tab>',self.jedi_autocomplete)
     def _on_change(self, event):
         self.linenumbers.redraw()
 
@@ -495,10 +489,41 @@ class PyText(tk.Frame):
             script = jedi.Script(code=code)
             completion = script.complete(line=line, column=column)
             print(completion)
-            # for i,names in enumerate(completion):
-            #     print(completion[i].name)
+            completions = []
+            for i,names in enumerate(completion):
+                completions.append(completion[i].name)
+
+            # entry = AutocompleteEntryListbox(acw, width=20, completevalues=completions)
+            # entry.pack(side='left')
+            # Place autocomplete box on text mark location
+            # https://github.com/python/cpython/blob/master/Lib/idlelib/autocomplete_w.py
+            text = self.text
+            text.see(self.text.index('insert'))
+            x, y, cx, cy = text.bbox(self.text.index('insert'))
+            acw = Toplevel(master)
+            acw_width, acw_height = acw.winfo_width(), acw.winfo_height()
+            text_width, text_height = text.winfo_width(), text.winfo_height()
+            new_x = text.winfo_rootx() + min(x, max(0, text_width - acw_width))
+            new_y = text.winfo_rooty() + y
+            if (text_height - (y + cy) >= acw_height  # enough height below
+                    or y < acw_height):  # not enough height above
+                # place acw below current line
+                new_y += cy
+            else:
+                # place acw above current line
+                new_y -= acw_height
+            acw.wm_geometry("+%d+%d" % (new_x, new_y))
+
+            from ttkwidgets.autocomplete import AutocompleteEntryListbox
+            entry = AutocompleteEntryListbox(acw, width=20, completevalues=completions)
+            entry.pack(side='left')
+            entry.get()
 
 
+
+
+
+            # master.mainloop()
 
 
 

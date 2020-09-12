@@ -425,8 +425,9 @@ class PyText(tk.Frame):
 
     def enter_key(self,*args):
         last_char = self.text.get('insert -1c')
+
         if last_char == ':':
-            pyautogui.press('tab')
+            pass
 
     def select(self, *args):
         pyautogui.press('shift')
@@ -469,16 +470,19 @@ class PyText(tk.Frame):
         self.text.bind("<Return>", self.enter_key)
         self.text.bind('<Escape>', self.normal_mode)
         self.text.bind('<Caps_Lock>', self.normal_mode)
-        self.text.bind('<Tab>',self.jedi_autocomplete)
+        self.text.bind('<F1>',self.jedi_autocomplete)
     def _on_change(self, event):
         self.linenumbers.redraw()
 
 
+
+
     def jedi_autocomplete(self,*args):
         # print('testing')
+        code = self.text.get('1.0', "end")
         line_column = self.text.index('insert').split('.')
         line, column = int(line_column[0]), int(line_column[1])
-        code = self.text.get('1.0',"end")
+
         # print(line, column)
         if self.filename:
             print('testing')
@@ -488,36 +492,79 @@ class PyText(tk.Frame):
         else:
             script = jedi.Script(code=code)
             completion = script.complete(line=line, column=column)
-            print(completion)
+
             completions = []
             for i,names in enumerate(completion):
                 completions.append(completion[i].name)
+
+            print(completion)
 
             # entry = AutocompleteEntryListbox(acw, width=20, completevalues=completions)
             # entry.pack(side='left')
             # Place autocomplete box on text mark location
             # https://github.com/python/cpython/blob/master/Lib/idlelib/autocomplete_w.py
-            text = self.text
-            text.see(self.text.index('insert'))
-            x, y, cx, cy = text.bbox(self.text.index('insert'))
-            acw = Toplevel(master)
-            acw_width, acw_height = acw.winfo_width(), acw.winfo_height()
-            text_width, text_height = text.winfo_width(), text.winfo_height()
-            new_x = text.winfo_rootx() + min(x, max(0, text_width - acw_width))
-            new_y = text.winfo_rooty() + y
-            if (text_height - (y + cy) >= acw_height  # enough height below
-                    or y < acw_height):  # not enough height above
-                # place acw below current line
-                new_y += cy
-            else:
-                # place acw above current line
-                new_y -= acw_height
-            acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
-            from ttkwidgets.autocomplete import AutocompleteEntryListbox
-            entry = AutocompleteEntryListbox(acw, width=20, completevalues=completions)
-            entry.pack(side='left')
-            entry.get()
+            if completions:
+                text = self.text
+                text.see(text.index('insert'))
+                x, y, cx, cy = text.bbox(text.index('insert'))
+                acw = Toplevel(master)
+
+                def key(event):
+                    # print("pressed", repr(event.char))
+
+                    key_pressed = repr(event.char)
+
+                    if not completions:
+                        print('notnone')
+
+
+                    if key_pressed == "'\\r'":
+                        autocomplete_selection = entry.get()
+                        first_char = text.index("insert -1c wordstart")
+                        last_char = text.index('insert -1c wordend')
+                        self.text.delete(first_char,last_char)
+                        self.text.insert(first_char,autocomplete_selection)
+                        acw.destroy()
+                        entry.destroy()
+
+
+
+                        # self.text.insert(text_index,autocomplete_selection)
+                        print(first_char,last_char,autocomplete_selection)
+
+                def callback(event):
+                    entry.focus_set()
+                    print("clicked at", event.x, event.y)
+
+
+                acw.bind("<Key>", key)
+                # acw.bind("<Button-1>", callback)
+
+                acw_width, acw_height = acw.winfo_width(), acw.winfo_height()
+                text_width, text_height = text.winfo_width(), text.winfo_height()
+                new_x = text.winfo_rootx() + min(x, max(0, text_width - acw_width))
+                new_y = text.winfo_rooty() + y
+                if (text_height - (y + cy) >= acw_height  # enough height below
+                        or y < acw_height):  # not enough height above
+                    # place acw below current line
+                    new_y += cy
+                else:
+                    # place acw above current line
+                    new_y -= acw_height
+
+
+                acw.wm_overrideredirect(True)
+                acw.wm_geometry("+%d+%d" % (new_x, new_y))
+
+
+                from ttkwidgets.autocomplete import AutocompleteEntryListbox
+                entry = AutocompleteEntryListbox(acw, width=20, completevalues=completions)
+                entry.pack()
+
+                return 'break'
+
+
 
 
 

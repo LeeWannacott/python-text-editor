@@ -1,7 +1,8 @@
 import tkinter as tk
+import tkinter.ttk
+
 import tkinter.font as TkFont
-from tkinter import filedialog, Toplevel
-from tkinter import messagebox
+from tkinter import filedialog, Toplevel,messagebox
 from pygments import highlight
 from pygments.lexers import PythonLexer
 from pygments import lex
@@ -74,10 +75,6 @@ class Menubar:
         box_title = "Release Notes"
         box_message = "Version 0.1"
         messagebox.showinfo(box_title, box_message)
-
-
-
-
 
 class Statusbar:
 
@@ -167,27 +164,31 @@ class PyText(tk.Frame):
         master.geometry("1200x700")
 
         self.master = master
-
         self.filename = None
 
+        self.nb = tkinter.ttk.Notebook(master,height=700)
+        self.page1 = tkinter.ttk.Frame(self.nb)
+        self.page2 = tkinter.ttk.Frame(self.nb)
 
-        # Calculate font and tabs
-        global font
         font = TkFont.Font(font=("Times 14"))
         tab_width = font.measure(' ' * 8)
-
         # Text area
-        self.text = CustomText(self, font = font, tabs=tab_width,padx = 5,pady = 5,height=5)
-
-        self.linenumbers = TextLineNumbers(self, width=25)
+        self.text = CustomText(self.page1, font = font, tabs=tab_width,padx = 5,pady = 5,height=5)
+        self.linenumbers = TextLineNumbers(self.page1, width=25)
         self.linenumbers.attach(self.text)
-        self.linenumbers.pack(side="left", fill="y")
+        self.linenumbers.pack( side="left", fill="y")
 
-        self.scroll = tk.Scrollbar(master, orient="vertical", command=self.text.yview)
+        self.scroll = tk.Scrollbar(self.text, orient="vertical", command=self.text.yview)
         self.text.configure(yscrollcommand=self.scroll.set)
-        # self.text.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
+
         self.text.pack(side="top", fill="both", expand=True)
         self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.nb.add(self.page1, text = 'One')
+        self.nb.add(self.page2, text = 'Two')
+
+        self.nb.pack(expand=1, fill="both")
+
 
         global syntax_highlighter
         def syntax_highlighter(event=None):
@@ -232,8 +233,8 @@ class PyText(tk.Frame):
 
         # START OF PYTHON TERMINAL
 
-        self.cmd = ConsoleText(self, font=font, tabs=tab_width, padx=5, pady=5,height=5,bg= 'white',fg='black')
-        self.cmd.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
+        self.cmd = ConsoleText(self.page1, font=font, tabs=tab_width, padx=5, pady=5,height=7,bg= 'white',fg='black')
+        self.cmd.pack(side= 'bottom', fill='both', expand=False)
         self.shell = code.InteractiveConsole(_locals)
 
         # make the enter key call the self.enter function
@@ -563,11 +564,6 @@ class PyText(tk.Frame):
                 entry.pack()
 
                 return 'break'
-
-
-
-
-
 
 
             # master.mainloop()

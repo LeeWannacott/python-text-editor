@@ -163,31 +163,36 @@ class PyText(tk.Frame):
         master.title("Untitled - PyText")
         master.geometry("1200x700")
 
-        self.master = master
-        self.filename = None
+        class new_tab():
+            self.master = master
+            self.filename = None
+            self.nb = tkinter.ttk.Notebook(master,height=700)
+            self.page1 = tkinter.ttk.Frame(self.nb)
 
-        self.nb = tkinter.ttk.Notebook(master,height=700)
-        self.page1 = tkinter.ttk.Frame(self.nb)
-        self.page2 = tkinter.ttk.Frame(self.nb)
+            font = TkFont.Font(font=("Times 14"))
+            tab_width = font.measure(' ' * 8)
+            # Text area
+            self.text = CustomText(self.page1, font = font, tabs=tab_width,padx = 5,pady = 5,height=5)
+            self.linenumbers = TextLineNumbers(self.page1, width=25)
+            self.linenumbers.attach(self.text)
+            self.linenumbers.pack(side="left", fill="y")
 
-        font = TkFont.Font(font=("Times 14"))
-        tab_width = font.measure(' ' * 8)
-        # Text area
-        self.text = CustomText(self.page1, font = font, tabs=tab_width,padx = 5,pady = 5,height=5)
-        self.linenumbers = TextLineNumbers(self.page1, width=25)
-        self.linenumbers.attach(self.text)
-        self.linenumbers.pack( side="left", fill="y")
+            self.scroll = tk.Scrollbar(self.text, orient="vertical", command=self.text.yview)
+            self.text.configure(yscrollcommand=self.scroll.set)
 
-        self.scroll = tk.Scrollbar(self.text, orient="vertical", command=self.text.yview)
-        self.text.configure(yscrollcommand=self.scroll.set)
+            self.text.pack(side="top", fill="both", expand=True)
+            self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.text.pack(side="top", fill="both", expand=True)
-        self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.nb.add(self.page1, text = 'One')
-        self.nb.add(self.page2, text = 'Two')
+            self.nb.add(self.page1, text = 'One')
+            self.nb.pack(expand=1, fill="both")
 
-        self.nb.pack(expand=1, fill="both")
+        first_tab = new_tab()
+
+
+
+
+
 
 
         global syntax_highlighter
@@ -232,7 +237,8 @@ class PyText(tk.Frame):
 
 
         # START OF PYTHON TERMINAL
-
+        font = TkFont.Font(font=("Times 14"))
+        tab_width = font.measure(' ' * 8)
         self.cmd = ConsoleText(self.page1, font=font, tabs=tab_width, padx=5, pady=5,height=7,bg= 'white',fg='black')
         self.cmd.pack(side= 'bottom', fill='both', expand=False)
         self.shell = code.InteractiveConsole(_locals)
@@ -311,7 +317,6 @@ class PyText(tk.Frame):
             # consume the line and run the command
             self.cmd.consume_last_line()
             self.prompt()
-
             self.command_running = True
 
             def run_command():
@@ -333,8 +338,34 @@ class PyText(tk.Frame):
             self.master.title("Untitled - PyText")
 
     def new_file(self, *args):
-        self.text.delete(1.0, tk.END)
+        # self.text.delete(1.0, tk.END)
         self.filename = None
+
+        # self.nb = tkinter.ttk.Notebook(master, height=700)
+        # self.page1 = tkinter.ttk.Frame(self.nb)
+        #
+        # font = TkFont.Font(font=("Times 14"))
+        # tab_width = font.measure(' ' * 8)
+        # # Text area
+        # self.text2 = CustomText(self.page1, font=font, tabs=tab_width, padx=5, pady=5, height=5)
+        # self.linenumbers2 = TextLineNumbers(self.page1, width=25)
+        # self.linenumbers2.attach(self.text2)
+        # self.linenumbers2.pack(side="left", fill="y")
+        #
+        # self.scroll2 = tk.Scrollbar(self.text2, orient="vertical", command=self.text2.yview)
+        # self.text2.configure(yscrollcommand=self.scroll2.set)
+        #
+        # self.text2.pack(side="top", fill="both", expand=True)
+        # self.scroll2.pack(side=tk.RIGHT, fill=tk.Y)
+        self.page2 = self.page1
+
+
+        self.nb.add(self.page2, text='tew')
+        # self.nb.pack(expand=1, fill="both")
+
+        self.nb.select(self.page2)
+
+        # self.nb.select(self.page1)
         self.set_window_title()
 
     def open_file(self, *args):
@@ -458,7 +489,7 @@ class PyText(tk.Frame):
             self.text.unbind('<d>')
             self.text.unbind('<e>')
             self.text.unbind('<a>')
-            print(counter)
+
             counter = 0
             # return 'break'
         # return 'break'
@@ -474,6 +505,7 @@ class PyText(tk.Frame):
         self.text.bind('<F1>',self.jedi_autocomplete)
     def _on_change(self, event):
         self.linenumbers.redraw()
+
 
 
 
@@ -500,9 +532,6 @@ class PyText(tk.Frame):
 
             print(completion)
 
-            # entry = AutocompleteEntryListbox(acw, width=20, completevalues=completions)
-            # entry.pack(side='left')
-            # Place autocomplete box on text mark location
             # https://github.com/python/cpython/blob/master/Lib/idlelib/autocomplete_w.py
 
             if completions:
@@ -519,7 +548,6 @@ class PyText(tk.Frame):
                     if not completions:
                         print('notnone')
 
-
                     if key_pressed == "'\\r'":
                         autocomplete_selection = entry.get()
                         first_char = text.index("insert -1c wordstart")
@@ -528,8 +556,6 @@ class PyText(tk.Frame):
                         self.text.insert(first_char,autocomplete_selection)
                         acw.destroy()
                         entry.destroy()
-
-
 
                         # self.text.insert(text_index,autocomplete_selection)
                         print(first_char,last_char,autocomplete_selection)
@@ -553,7 +579,6 @@ class PyText(tk.Frame):
                 else:
                     # place acw above current line
                     new_y -= acw_height
-
 
                 acw.wm_overrideredirect(True)
                 acw.wm_geometry("+%d+%d" % (new_x, new_y))

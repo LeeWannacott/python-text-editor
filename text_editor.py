@@ -188,11 +188,6 @@ class PyText(tk.Frame):
 
 
 
-
-
-
-
-
         # print(getattr(self.first_tab, 'page1'))
 
         global syntax_highlighter
@@ -341,8 +336,6 @@ class PyText(tk.Frame):
         # self.text.delete(1.0, tk.END)
 
         self.filename = None
-
-
 
 
 

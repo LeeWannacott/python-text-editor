@@ -164,11 +164,11 @@ class PyText(tk.Frame):
         master.geometry("1200x700")
 
         class new_tab():
+            self.name = 'test'
             self.master = master
             self.filename = None
-            self.nb = tkinter.ttk.Notebook(master,height=700)
+            self.nb = tkinter.ttk.Notebook(self.master,height=700)
             self.page1 = tkinter.ttk.Frame(self.nb)
-
             font = TkFont.Font(font=("Times 14"))
             tab_width = font.measure(' ' * 8)
             # Text area
@@ -176,24 +176,24 @@ class PyText(tk.Frame):
             self.linenumbers = TextLineNumbers(self.page1, width=25)
             self.linenumbers.attach(self.text)
             self.linenumbers.pack(side="left", fill="y")
-
             self.scroll = tk.Scrollbar(self.text, orient="vertical", command=self.text.yview)
             self.text.configure(yscrollcommand=self.scroll.set)
-
             self.text.pack(side="top", fill="both", expand=True)
             self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
-
             self.nb.add(self.page1, text = 'One')
             self.nb.pack(expand=1, fill="both")
-
         first_tab = new_tab()
 
+        # print(dir(first_tab))
 
 
 
 
 
+
+
+
+        # print(getattr(self.first_tab, 'page1'))
 
         global syntax_highlighter
         def syntax_highlighter(event=None):
@@ -339,31 +339,13 @@ class PyText(tk.Frame):
 
     def new_file(self, *args):
         # self.text.delete(1.0, tk.END)
+
         self.filename = None
 
-        # self.nb = tkinter.ttk.Notebook(master, height=700)
-        # self.page1 = tkinter.ttk.Frame(self.nb)
-        #
-        # font = TkFont.Font(font=("Times 14"))
-        # tab_width = font.measure(' ' * 8)
-        # # Text area
-        # self.text2 = CustomText(self.page1, font=font, tabs=tab_width, padx=5, pady=5, height=5)
-        # self.linenumbers2 = TextLineNumbers(self.page1, width=25)
-        # self.linenumbers2.attach(self.text2)
-        # self.linenumbers2.pack(side="left", fill="y")
-        #
-        # self.scroll2 = tk.Scrollbar(self.text2, orient="vertical", command=self.text2.yview)
-        # self.text2.configure(yscrollcommand=self.scroll2.set)
-        #
-        # self.text2.pack(side="top", fill="both", expand=True)
-        # self.scroll2.pack(side=tk.RIGHT, fill=tk.Y)
-        self.page2 = self.page1
 
 
-        self.nb.add(self.page2, text='tew')
-        # self.nb.pack(expand=1, fill="both")
 
-        self.nb.select(self.page2)
+
 
         # self.nb.select(self.page1)
         self.set_window_title()

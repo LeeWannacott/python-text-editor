@@ -76,16 +76,18 @@ class Menubar:
         box_message = "Version 0.1"
         messagebox.showinfo(box_title, box_message)
 
-class Statusbar:
 
-    def __init__(self, parent):
+class Statusbar(object):
 
+    def __init__(self,parent,tab):
+
+        self.tab = tab
         font_specs = ("ubuntu", 12)
 
         self.status = tk.StringVar()
         self.status.set('Text Editor')
 
-        label = tk.Label(parent.text, textvariable=self.status, fg="black",
+        label = tk.Label(self.tab.text, textvariable=self.status, fg="black",
                          bg="lightgrey", anchor='sw', font=font_specs)
         label.pack(side=tk.BOTTOM, fill=tk.BOTH)
 
@@ -129,8 +131,6 @@ class TextLineNumbers(tk.Canvas):
 class CustomText(tk.Text):
     def __init__(self, *args, **kwargs):
         tk.Text.__init__(self, *args, **kwargs)
-
-
         # create a proxy for the underlying widget
         self._orig = self._w + "_orig"
         self.tk.call("rename", self._w, self._orig)
@@ -155,86 +155,80 @@ class CustomText(tk.Text):
         # return what the actual widget returned
         return result
 
+class CreateTab(object):
+    def __init__(self,master):
+        self.filename = None
+        master = master
+        nb = tkinter.ttk.Notebook(master, height=700)
+        self.page1 = tkinter.ttk.Frame(nb)
+        # self.font = TkFont.Font(font=("Times 14"))
+        self.font = TkFont.Font(font=("Times 14"))
+        self.tab_width = self.font.measure(' ' * 8)
+        # Text area
+        self.text = CustomText(self.page1, font = self.font, tabs= self.tab_width,padx = 5,pady = 5,height=5)
+        self.linenumbers = TextLineNumbers(self.page1, width=25)
+        self.linenumbers.attach(self.text)
+        self.linenumbers.pack(side="left", fill="y")
+        self.scroll = tk.Scrollbar(self.text, orient="vertical", command=self.text.yview)
+        self.text.configure(yscrollcommand=self.scroll.set)
+        self.text.pack(side="top", fill="both", expand=True)
+        self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        nb.add(self.page1, text = 'Tab')
+        nb.pack(expand=1, fill="both")
 
-class PyText(tk.Frame):
-
+class PyText(tk.Frame,):
     def __init__(self, parent, _locals, exit_callback, *args, **kwargs,):
-        tk.Frame.__init__(self, *args, **kwargs)
+        tk.Frame.__init__(self,*args, **kwargs)
+
         master.title("Untitled - PyText")
         master.geometry("1200x700")
 
-        class new_tab():
-            self.name = 'test'
-            self.master = master
-            self.filename = None
-            self.nb = tkinter.ttk.Notebook(self.master,height=700)
-            self.page1 = tkinter.ttk.Frame(self.nb)
-            font = TkFont.Font(font=("Times 14"))
-            tab_width = font.measure(' ' * 8)
-            # Text area
-            self.text = CustomText(self.page1, font = font, tabs=tab_width,padx = 5,pady = 5,height=5)
-            self.linenumbers = TextLineNumbers(self.page1, width=25)
-            self.linenumbers.attach(self.text)
-            self.linenumbers.pack(side="left", fill="y")
-            self.scroll = tk.Scrollbar(self.text, orient="vertical", command=self.text.yview)
-            self.text.configure(yscrollcommand=self.scroll.set)
-            self.text.pack(side="top", fill="both", expand=True)
-            self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
-            self.nb.add(self.page1, text = 'One')
-            self.nb.pack(expand=1, fill="both")
-        first_tab = new_tab()
+        self.tab = CreateTab(master)
 
-        # print(dir(first_tab))
-
-
-
-        # print(getattr(self.first_tab, 'page1'))
 
         global syntax_highlighter
         def syntax_highlighter(event=None):
-
-            self.text.mark_set("range_start", "1.0")
-            data = self.text.get("1.0", "end-1c")
+            self.tab.text.mark_set("range_start", "1.0")
+            data = self.tab.text.get("1.0", "end-1c")
 
             for token, content in lex(data, PythonLexer()):
-                self.text.mark_set("range_end", "range_start + %dc" % len(content))
-                self.text.tag_add(str(token), "range_start", "range_end")
-                self.text.mark_set("range_start", "range_end")
-                self.text.tag_configure("Token.Keyword", foreground="#DD7A00")
-                self.text.tag_configure("Token.Name.Builtin", foreground="#248F24")
-                self.text.tag_configure("Token.Keyword.Constant", foreground="#CF7A00")
-                self.text.tag_configure("Token.Literal.String.Double", foreground="#648F24")
-                self.text.tag_configure("Token.Literal.String.Single", foreground="#648F24")
-                self.text.tag_configure("Token.Keyword.Declaration", foreground="#CE7A00")
-                self.text.tag_configure("Token.Keyword.Namespace", foreground="#CE8A80")
-                self.text.tag_configure("Token.Keyword.Pseudo", foreground="#CC7B00")
-                self.text.tag_configure("Token.Keyword.Reserved", foreground="#A87A00")
-                self.text.tag_configure("Token.Keyword.Type", foreground="#CFFA00")
-                self.text.tag_configure("Token.Name.Class", foreground="#ABF")
-                self.text.tag_configure("Token.Name.Exception", foreground="#003D99")
-                self.text.tag_configure("Token.Name.Function", foreground="#003D99")
-                self.text.tag_configure("Token.Operator.Word", foreground="#CC7A00")
-                self.text.tag_configure("Token.Comment.Single", foreground="#B80000")
-                self.text.tag_configure("Token.Literal.String", foreground="#248F24")
+                self.tab.text.mark_set("range_end", "range_start + %dc" % len(content))
+                self.tab.text.tag_add(str(token), "range_start", "range_end")
+                self.tab.text.mark_set("range_start", "range_end")
+                self.tab.text.tag_configure("Token.Keyword", foreground="#DD7A00")
+                self.tab.text.tag_configure("Token.Name.Builtin", foreground="#248F24")
+                self.tab.text.tag_configure("Token.Keyword.Constant", foreground="#CF7A00")
+                self.tab.text.tag_configure("Token.Literal.String.Double", foreground="#648F24")
+                self.tab.text.tag_configure("Token.Literal.String.Single", foreground="#648F24")
+                self.tab.text.tag_configure("Token.Keyword.Declaration", foreground="#CE7A00")
+                self.tab.text.tag_configure("Token.Keyword.Namespace", foreground="#CE8A80")
+                self.tab.text.tag_configure("Token.Keyword.Pseudo", foreground="#CC7B00")
+                self.tab.text.tag_configure("Token.Keyword.Reserved", foreground="#A87A00")
+                self.tab.text.tag_configure("Token.Keyword.Type", foreground="#CFFA00")
+                self.tab.text.tag_configure("Token.Name.Class", foreground="#ABF")
+                self.tab.text.tag_configure("Token.Name.Exception", foreground="#003D99")
+                self.tab.text.tag_configure("Token.Name.Function", foreground="#003D99")
+                self.tab.text.tag_configure("Token.Operator.Word", foreground="#CC7A00")
+                self.tab.text.tag_configure("Token.Comment.Single", foreground="#B80000")
+                self.tab.text.tag_configure("Token.Literal.String", foreground="#248F24")
 
 
                 # print(token,content)
 
-
-        self.text.bind("<<Change>>", self._on_change)
-        self.text.bind("<Configure>", self._on_change)
-        self.text.bind("<KeyRelease>", syntax_highlighter ,add="+")
+        self.tab.text.bind("<<Change>>", self._on_change)
+        self.tab.text.bind("<Configure>", self._on_change)
+        self.tab.text.bind("<KeyRelease>", syntax_highlighter ,add="+")
         # self.text.bind('<KeyRelease>', self.jedi_autocomplete, add="+")
 
         self.menubar = Menubar(self)
-        self.statusbar = Statusbar(self)
+        self.statusbar = Statusbar(self, self.tab)
 
 
 
         # START OF PYTHON TERMINAL
         font = TkFont.Font(font=("Times 14"))
         tab_width = font.measure(' ' * 8)
-        self.cmd = ConsoleText(self.page1, font=font, tabs=tab_width, padx=5, pady=5,height=7,bg= 'white',fg='black')
+        self.cmd = ConsoleText(self.tab.page1, font=font, tabs=tab_width, padx=5, pady=5,height=7,bg= 'white',fg='black')
         self.cmd.pack(side= 'bottom', fill='both', expand=False)
         self.shell = code.InteractiveConsole(_locals)
 
@@ -333,14 +327,8 @@ class PyText(tk.Frame):
             self.master.title("Untitled - PyText")
 
     def new_file(self, *args):
-        # self.text.delete(1.0, tk.END)
-
-        self.filename = None
 
 
-
-
-        # self.nb.select(self.page1)
         self.set_window_title()
 
     def open_file(self, *args):
@@ -354,9 +342,9 @@ class PyText(tk.Frame):
                        ("HTML Documents", "*.html"),
                        ("CSS Documents", "*.css")])
         if self.filename:
-            self.text.delete(1.0, tk.END)
+            self.tab.text.delete(1.0, tk.END)
             with open(self.filename, "r") as f:
-                self.text.insert(1.0, f.read())
+                self.tab.text.insert(1.0, f.read())
 
             syntax_highlighter()
             # self.syntax_highlighter()
@@ -365,7 +353,7 @@ class PyText(tk.Frame):
     def save(self, *args):
         if self.filename:
             try:
-                textarea_content = self.text.get(1.0, tk.END)
+                textarea_content =  self.tab.text.get(1.0, tk.END)
                 with open(self.filename, "w") as f:
                     f.write(textarea_content)
                 self.statusbar.update_status(True)
@@ -386,7 +374,7 @@ class PyText(tk.Frame):
                            ("JavaScript Files", "*.js"),
                            ("HTML Documents", "*.html"),
                            ("CSS Documents", "*.css")])
-            textarea_content = self.text.get(1.0, tk.END)
+            textarea_content = self.tab.text.get(1.0, tk.END)
             with open(new_file, "w") as f:
                 f.write(textarea_content)
             self.filename = new_file
@@ -396,9 +384,9 @@ class PyText(tk.Frame):
             print(e)
 
     def run_current_script(self, *args):
-        if self.filename:
-            exec(open(self.filename).read())
-            print(self.filename)
+        if self.tab.filename:
+            exec(open(self.tab.filename).read())
+            print(self.tab.filename)
         else:
             print('Load/save a file before running.')
 
@@ -406,32 +394,32 @@ class PyText(tk.Frame):
 
     # Key mappings for Normal mode
     def go_to_start_of_word(self,*args):
-        self.text.mark_set('insert', 'insert -1c wordstart')
+        self.tab.text.mark_set('insert', 'insert -1c wordstart')
         return "break"
 
     def go_to_end_of_word(self, *args):
-        self.text.mark_set('insert', 'insert wordend')
+        self.tab.text.mark_set('insert', 'insert wordend')
         return "break"
 
     def go_to_start_of_line(self, *args):
-        self.text.mark_set('insert', 'insert linestart')
+        self.tab.text.mark_set('insert', 'insert linestart')
         return "break"
 
     def go_to_end_of_line(self, *args):
-        self.text.mark_set('insert', 'insert lineend')
+        self.tab.text.mark_set('insert', 'insert lineend')
         return "break"
 
     def go_down_one_line(self, *args):
-        self.text.mark_set('insert', 'insert + 1 lines')
+        self.tab.text.mark_set('insert', 'insert + 1 lines')
         return "break"
 
     def go_up_one_line(self, *args):
-        self.text.mark_set('insert', 'insert - 1 lines')
+        self.tab.text.mark_set('insert', 'insert - 1 lines')
         return "break"
 
 
     def enter_key(self,*args):
-        last_char = self.text.get('insert -1c')
+        last_char =  self.tab.text.get('insert -1c')
 
         if last_char == ':':
             pass
@@ -448,38 +436,38 @@ class PyText(tk.Frame):
         counter +=1
 
         self.statusbar.update_status2(True)
-        self.text.bind('<s>', self.go_to_start_of_word)
-        self.text.bind('<f>', self.go_to_end_of_word)
-        self.text.bind('<w>', self.go_to_start_of_line)
-        self.text.bind('<r>', self.go_to_end_of_line)
-        self.text.bind('<d>', self.go_down_one_line)
-        self.text.bind('<e>', self.go_up_one_line)
-        self.text.bind('<a>', self.select)
+        self.tab.text.bind('<s>', self.go_to_start_of_word)
+        self.tab.text.bind('<f>', self.go_to_end_of_word)
+        self.tab.text.bind('<w>', self.go_to_start_of_line)
+        self.tab.text.bind('<r>', self.go_to_end_of_line)
+        self.tab.text.bind('<d>', self.go_down_one_line)
+        self.tab.text.bind('<e>', self.go_up_one_line)
+        self.tab.text.bind('<a>', self.select)
         if counter > 1:
             self.statusbar.update_status2(False)
-            self.text.unbind('<s>')
-            self.text.unbind('<f>')
-            self.text.unbind('<w>')
-            self.text.unbind('<r>')
-            self.text.unbind('<d>')
-            self.text.unbind('<e>')
-            self.text.unbind('<a>')
+            self.tab.text.unbind('<s>')
+            self.tab.text.unbind('<f>')
+            self.tab.text.unbind('<w>')
+            self.tab.text.unbind('<r>')
+            self.tab.text.unbind('<d>')
+            self.tab.text.unbind('<e>')
+            self.tab.text.unbind('<a>')
 
             counter = 0
             # return 'break'
         # return 'break'
     def bind_shortcuts(self):
-        self.text.bind('<Control-n>', self.new_file)
-        self.text.bind('<Control-o>', self.open_file)
-        self.text.bind('<Control-s>', self.save)
-        self.text.bind('<Control-S>', self.save_as)
-        self.text.bind('<Key>', self.statusbar.update_status)
-        self.text.bind("<Return>", self.enter_key)
-        self.text.bind('<Escape>', self.normal_mode)
-        self.text.bind('<Caps_Lock>', self.normal_mode)
-        self.text.bind('<F1>',self.jedi_autocomplete)
+        self.tab.text.bind('<Control-n>', self.new_file)
+        self.tab.text.bind('<Control-o>', self.open_file)
+        self.tab.text.bind('<Control-s>', self.save)
+        self.tab.text.bind('<Control-S>', self.save_as)
+        self.tab.text.bind('<Key>', self.statusbar.update_status)
+        self.tab.text.bind("<Return>", self.enter_key)
+        self.tab.text.bind('<Escape>', self.normal_mode)
+        self.tab.text.bind('<Caps_Lock>', self.normal_mode)
+        self.tab.text.bind('<F1>',self.jedi_autocomplete)
     def _on_change(self, event):
-        self.linenumbers.redraw()
+        self.tab.linenumbers.redraw()
 
 
 
@@ -487,14 +475,14 @@ class PyText(tk.Frame):
 
     def jedi_autocomplete(self,*args):
         # print('testing')
-        code = self.text.get('1.0', "end")
-        line_column = self.text.index('insert').split('.')
+        code = self.tab.text.get('1.0', "end")
+        line_column = self.tab.text.index('insert').split('.')
         line, column = int(line_column[0]), int(line_column[1])
 
         # print(line, column)
-        if self.filename:
+        if self.tab.filename:
             print('testing')
-            script = jedi.Script(code=code,path=self.filename)
+            script = jedi.Script(code=code,path=self.tab.filename)
             completion = script.complete(line=line,column=column)
             print(completion)
         else:
@@ -510,7 +498,7 @@ class PyText(tk.Frame):
             # https://github.com/python/cpython/blob/master/Lib/idlelib/autocomplete_w.py
 
             if completions:
-                text = self.text
+                text = self.tab.text
                 text.see(text.index('insert'))
                 x, y, cx, cy = text.bbox(text.index('insert'))
                 acw = Toplevel(master)
@@ -527,8 +515,8 @@ class PyText(tk.Frame):
                         autocomplete_selection = entry.get()
                         first_char = text.index("insert -1c wordstart")
                         last_char = text.index('insert -1c wordend')
-                        self.text.delete(first_char,last_char)
-                        self.text.insert(first_char,autocomplete_selection)
+                        self.tab.text.delete(first_char,last_char)
+                        self.tab.text.insert(first_char,autocomplete_selection)
                         acw.destroy()
                         entry.destroy()
 
@@ -571,6 +559,7 @@ class PyText(tk.Frame):
 
 
 if __name__ == "__main__":
+    global master
     master = tk.Tk()
     pt = PyText(master,locals(), master.destroy).pack(side="top", fill="both", expand=True)
     master.mainloop()

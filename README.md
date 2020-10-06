@@ -2,5 +2,5 @@
 Text editor for Python influenced by Vim.
 
 
-```Example of text file for boundary boxing feature:```
+```Text editor (WIP):```
 ![Screenshot](https://github.com/LeeWannacott/python-text-editor/blob/master/Python-text-editor.png)

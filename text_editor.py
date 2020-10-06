@@ -332,7 +332,7 @@ class PyText(tk.Frame,):
         self.set_window_title()
 
     def open_file(self, *args):
-        self.filename = filedialog.askopenfilename(
+        self.tab.filename = filedialog.askopenfilename(
             defaultextension=".txt",
             filetypes=[("All Files", "*.*"),
                        ("Text Files", "*.txt"),
@@ -341,20 +341,20 @@ class PyText(tk.Frame,):
                        ("JavaScript Files", "*.js"),
                        ("HTML Documents", "*.html"),
                        ("CSS Documents", "*.css")])
-        if self.filename:
+        if self.tab.filename:
             self.tab.text.delete(1.0, tk.END)
-            with open(self.filename, "r") as f:
+            with open(self.tab.filename, "r") as f:
                 self.tab.text.insert(1.0, f.read())
 
             syntax_highlighter()
             # self.syntax_highlighter()
-            self.set_window_title(self.filename)
+            self.set_window_title(self.tab.filename)
 
     def save(self, *args):
-        if self.filename:
+        if self.tab.filename:
             try:
                 textarea_content =  self.tab.text.get(1.0, tk.END)
-                with open(self.filename, "w") as f:
+                with open(self.tab.filename, "w") as f:
                     f.write(textarea_content)
                 self.statusbar.update_status(True)
             except Exception as e:
@@ -377,8 +377,8 @@ class PyText(tk.Frame,):
             textarea_content = self.tab.text.get(1.0, tk.END)
             with open(new_file, "w") as f:
                 f.write(textarea_content)
-            self.filename = new_file
-            self.set_window_title(self.filename)
+            self.tab.filename = new_file
+            self.set_window_title(self.tab.filename)
             self.statusbar.update_status(True)
         except Exception as e:
             print(e)
@@ -386,7 +386,7 @@ class PyText(tk.Frame,):
     def run_current_script(self, *args):
         if self.tab.filename:
             exec(open(self.tab.filename).read())
-            print(self.tab.filename)
+            # print(self.tab.filename)
         else:
             print('Load/save a file before running.')
 
@@ -481,11 +481,11 @@ class PyText(tk.Frame,):
 
         # print(line, column)
         if self.tab.filename:
-            print('testing')
-            script = jedi.Script(code=code,path=self.tab.filename)
-            completion = script.complete(line=line,column=column)
-            print(completion)
-        else:
+
+        #     script = jedi.Script(code=code,path=self.tab.filename)
+        #     completion = script.complete(line=line,column=column)
+        #     # print(completion)
+        # else:
             script = jedi.Script(code=code)
             completion = script.complete(line=line, column=column)
 
@@ -493,7 +493,7 @@ class PyText(tk.Frame,):
             for i,names in enumerate(completion):
                 completions.append(completion[i].name)
 
-            print(completion)
+            # print(completion)
 
             # https://github.com/python/cpython/blob/master/Lib/idlelib/autocomplete_w.py
 
